@@ -9,7 +9,9 @@
   },
   "author": "Tejas Manohar",
   "dependencies": {
+    "dotenv": "^1.1.0",
+    "express": "^4.9.4",
     "socket.io": "^0.9.16",
-    "express": "^4.9.4"
+    "twitch-irc": "^1.2.7"
   }
 }

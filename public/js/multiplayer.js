@@ -17,23 +17,6 @@ socket.on('connected', function (data) {
 socket.on('move', function (data) {
   // Add move to input list
   var direction = data.direction;
-  var userId = data.userId;
-  var moveElement = document.createElement('li');
-  var from = data.from;
-  var userIdString = from + " Texter";
-  if (userId === yourUserId) {
-    userIdString = '<strong>' + userIdString + '</strong>';
-  }
-  moveElement.innerHTML = '<span class="move move-'+direction+'">' + arrows[direction] + '</span>' + userIdString;
-  moveList.insertBefore(moveElement,moveList.firstChild);
-
-  // Remove input list item if there are too many
-  var moveListLen = moveList.childNodes.length;
-  if (moveListLen > MOVE_LIST_CUTOFF) {
-    for (var i = MOVE_LIST_CUTOFF; i < moveListLen; ++i) {
-      moveList.removeChild(moveList.childNodes[i]);
-    }
-  }
 
   // Set the game state (if we're not in a pause state)
   if (!(manager.won || manager.over)) {

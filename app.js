@@ -1,7 +1,10 @@
+require('dotenv').load();
+
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
+var irc = require('twitch-irc');
 app.use(express.static(__dirname + '/public'));
 
 io.configure('production', function(){
@@ -17,44 +20,58 @@ var port = process.env.PORT || 8000;
 server.listen(port);
 console.log("Listening at port: " + port);
 
-// Routes
-// Receive SMS
-app.get('/receive', function(req, res) {
-  var string = req.query['Body'];
-  var city = req.query['FromCity'];
-  var dir;
-  if(string.toLowerCase().indexOf('up') > -1) {
-    game.move(0);
-    dir = 0;
-  } else if (string.toLowerCase().indexOf('right') > -1) {
-    game.move(1);
-    dir = 1;
-  } else if (string.toLowerCase().indexOf('down') > -1) {
-    game.move(2);
-    dir = 2;
-  } else if (string.toLowerCase().indexOf('left') > -1) {
-    game.move(3);
-    dir = 3;
-  }
-  if (typeof dir !== 'undefined') {
-    var gameData = game.getGameData();
-    var data = {
-      direction: dir,
-      from: city,
-      userId: "",
-      numUsers: io.sockets.clients().length,
-      gameData: gameData
-    };
-    if (gameData.over || gameData.won) {
-        game.restart(function () {
-          var data = game.getGameData();
-          data.highscores = game.getHighscores();
-          io.sockets.emit('restart', data);
-        });
+var clientOptions = {
+    options: {
+        debug: true,
+        debugIgnore: ['ping', 'chat', 'action']
+    },
+    identity: {
+        username: process.env.username,
+        password: process.env.password
+    },
+    channels: ['legobaseball2']
+}
+var client = new irc.client(clientOptions);
+
+client.connect();
+
+client.addListener('chat', function (channel, user, message) {
+    console.log(message);
+    switch(message.toLowerCase()) {
+      case 'up':
+        game.move(0);
+        dir = 0;
+        break;
+      case 'right':
+        game.move(1);
+        dir = 1;
+        break;
+      case 'down':
+        game.move(2);
+        dir = 2;
+        break;
+      case 'left':
+        game.move(3);
+        dir = 3;
+        break;
     }
-    io.sockets.emit('move', data);
-    res.sendStatus(200);     
-  }
+    if (typeof dir !== 'undefined') {
+      var gameData = game.getGameData();
+      var data = {
+        direction: dir,
+        userId: "",
+        numUsers: io.sockets.clients().length,
+        gameData: gameData
+      };
+      if (gameData.over || gameData.won) {
+          game.restart(function () {
+            var data = game.getGameData();
+            data.highscores = game.getHighscores();
+            io.sockets.emit('restart', data);
+          });
+      }
+      io.sockets.emit('move', data);
+    }
 });
 
 app.get('*', function (req, res) {
